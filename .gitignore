@@ -1,0 +1,6 @@
+config.json
+credentials.json
+jsonOutput.json
+token.json
+go.sum
+.DS_Store
