@@ -1,14 +1,10 @@
 package main
 
 import (
-	"fmt"
-
 	"google.golang.org/api/drive/v3"
 )
 
 //func crawlForMistakes
-
-//func
 
 func crawlHierarchy(folderID string) ([]Employee, error) {
 	srv, err := createDriveService()
@@ -35,7 +31,7 @@ func crawlHierarchyRecursive(driveSrv *drive.Service, folderName string, folderI
 
 	for _, curFile := range r.Files {
 
-		fmt.Printf("FOUND: %s (%s)\n", curFile.Name, curFile.Id)
+		debugLog("FOUND: %s (%s)\n", curFile.Name, curFile.Id)
 		compoundList = append(compoundList, Employee{Pseudo: curFile.Name, ManagerPseudo: folderName, FolderID: curFile.Id})
 
 		compoundList, err = crawlHierarchyRecursive(driveSrv, curFile.Name, curFile.Id, compoundList)

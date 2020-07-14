@@ -12,6 +12,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
+	"google.golang.org/api/sheets/v4"
 )
 
 func getClient(config *oauth2.Config) *http.Client {
@@ -59,7 +60,7 @@ func tokenFromFile(file string) (*oauth2.Token, error) {
 
 // Saves a token to a file path.
 func saveToken(path string, token *oauth2.Token) {
-	fmt.Printf("Saving credential file to: %s\n", path)
+	debugLog("Saving credential file to: %s\n", path)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		log.Fatalf("Unable to cache oauth token: %v", err)
@@ -76,11 +77,31 @@ func createDriveService() (*drive.Service, error) {
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(credentialsFile, drive.DriveMetadataReadonlyScope)
+	config, err := google.ConfigFromJSON(credentialsFile, drive.DriveFileScope)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
 	client := getClient(config)
 
 	return drive.New(client)
+}
+
+func createSheetsService() (*sheets.Service, error) {
+
+	credentialsFile, err := ioutil.ReadFile("credentials.json")
+	if err != nil {
+		log.Fatalf("Unable to read client secret file: %v", err)
+	}
+
+	// If modifying these scopes, delete your previously saved token.json.
+	config, err := google.ConfigFromJSON(credentialsFile, sheets.DriveScope)
+
+	//config, err := google.ConfigFromJSON(credentialsFile, sheets.DriveFileScope)
+
+	if err != nil {
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
+	}
+	client := getClient(config)
+
+	return sheets.New(client)
 }
