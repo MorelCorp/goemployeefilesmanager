@@ -19,6 +19,14 @@ func debugLog(message string, a ...interface{}) {
 	log.Printf(message, a...)
 }
 
+func folderLinkFormat(folderID string) string {
+	return "https://drive.google.com/drive/folders/" + folderID
+}
+
+func spreadsheetLinkFormat(spreadsheetID string) string {
+	return "https://docs.google.com/spreadsheets/d/" + spreadsheetID
+}
+
 func writeEmployeeListToFile(employeeList []Employee, filename string) error {
 	jsonOutput, err := json.Marshal(employeeList)
 	check(err)
@@ -36,7 +44,7 @@ func employeeListToArray(employeeList []Employee) [][]interface{} {
 	rArray = append(rArray, []interface{}{"Employee", "Manager", "Folder Link"})
 
 	for _, curEmployee := range employeeList {
-		rArray = append(rArray, []interface{}{curEmployee.Pseudo, curEmployee.ManagerPseudo, curEmployee.FolderID})
+		rArray = append(rArray, []interface{}{curEmployee.Pseudo, curEmployee.ManagerPseudo, folderLinkFormat(curEmployee.FolderID)})
 	}
 
 	return rArray

@@ -1,6 +1,8 @@
 package main
 
-import "google.golang.org/api/sheets/v4"
+import (
+	"google.golang.org/api/sheets/v4"
+)
 
 func employeeListToSheet(sheetTitle string, employeeList []Employee) (string, error) {
 
@@ -18,13 +20,9 @@ func employeeListToSheet(sheetTitle string, employeeList []Employee) (string, er
 	newSheet, err = srv.Spreadsheets.Create(newSheet).Do()
 	check(err)
 
-	/////TODO #1 c'est là qu'on est rendu!
-	////srv.Spreadsheets.BatchUpdate
-
-	newSheet.
-
 	spreadsheetID := newSheet.SpreadsheetId
-	debugLog("New spreadsheet:%s", spreadsheetID)
+	_, err = srv.Spreadsheets.Values.Append(spreadsheetID, valueRange.Range, valueRange).ValueInputOption("USER_ENTERED").Do()
+	check(err)
 
-	return "", nil
+	return spreadsheetID, nil
 }
