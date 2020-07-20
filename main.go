@@ -64,17 +64,18 @@ func updateHierarchy(rootFolderID string, employeeRosterSheetID string) error {
 }
 
 // distribute will add one copy of the provided document in each folder of the hierarchy
-func distribute(rootFolderID string, sourceDocumentID string) error {
-
-	return nil
+func distribute(rootFolderID string, sourceDocumentID string, prefix string) error {
+	return distributeDocument(rootFolderID, sourceDocumentID, prefix)
 }
 
-func validateParamsNumber(requiredParamsNumber int, params []string) bool {
+func validateParamsNumber(requiredParamsNumber int, params []string, silent bool) bool {
 	if len(params) >= requiredParamsNumber {
 		return true
 	}
 
-	fmt.Println("Expected more parameters.")
+	if !silent {
+		fmt.Println("Expected more parameters.")
+	}
 	return false
 }
 
@@ -94,7 +95,7 @@ func main() {
 		authenticate()
 
 	case "crawl":
-		if validateParamsNumber(1, params) {
+		if validateParamsNumber(1, params, false) {
 			crawl(params[0], false, true)
 		}
 
@@ -103,13 +104,15 @@ func main() {
 	case "update":
 
 	case "updateaccessrights":
-		if validateParamsNumber(1, params) {
+		if validateParamsNumber(1, params, false) {
 			updateAccessRights(params[0], false)
 		}
 
 	case "distribute":
-		if validateParamsNumber(2, params) {
-			distribute(params[0], params[1])
+		if validateParamsNumber(3, params, true) {
+			distribute(params[0], params[1], params[2])
+		} else if validateParamsNumber(2, params, false) {
+			distribute(params[0], params[1], "")
 		}
 
 	case "help":
