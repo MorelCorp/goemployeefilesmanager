@@ -26,3 +26,22 @@ func employeeListToSheet(sheetTitle string, employeeList []Employee) (string, er
 
 	return spreadsheetID, nil
 }
+
+func importHierarchy(hierarchyFileID string) []Employee {
+	srv, err := createSheetsService()
+	check(err)
+
+	// The ranges to retrieve from the spreadsheet.
+	// ranges := []string{} // TODO: Update placeholder value.
+
+	// True if grid data should be returned.
+	// This parameter is ignored if a field mask was set in the request.
+	//includeGridData := false // TODO: Update placeholder value.
+
+	readRange := "Sheet1!A2:C"
+
+	rValue, err := srv.Spreadsheets.Values.Get(hierarchyFileID, readRange).Do()
+	check(err)
+
+	return valueRangeToEmployeeList(rValue)
+}

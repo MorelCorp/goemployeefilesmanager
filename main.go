@@ -51,16 +51,57 @@ func crawl(rootFolderID string, jsonOutput bool, sheetOutput bool) error {
 	return nil
 }
 
-// populateHierarchy uses the spreadsheet id in params to create folder hierarchy from specified rootFolderID
-func populateHierarchy(rootFolderID string, employeeRosterSheetID string) error {
-
-	return nil
-}
-
 //updateHierarchy will use the spreadsheet id in param and parse the folder hierarchy to define and apply what needs to be updated
-func updateHierarchy(rootFolderID string, employeeRosterSheetID string) error {
+func updateHierarchy(rootFolderID string, employeeRosterSheetID string) {
 
-	return nil
+	//read roster tree
+	expectedHierarchy := importHierarchy(employeeRosterSheetID)
+
+	//parse folder hierarchy and note problems
+	curHierarchy, err := crawlHierarchy(rootFolderID)
+	check(err)
+
+	curHierarchyMap := employeeListToMap(curHierarchy)
+
+	//let's list all the work to do
+	var workToDo []Work
+
+	for _, curExpectedEmployee := range expectedHierarchy {
+
+		newWork := Work{
+			target: curExpectedEmployee,
+		}
+
+		realEmployee, ok := curHierarchyMap[curExpectedEmployee.Pseudo]
+
+		if ok != true {
+			newWork.op = create
+		} else if realEmployee.ManagerPseudo == curExpectedEmployee.ManagerPseudo {
+			newWork.op = noop
+			newWork.cur = *realEmployee
+		} else {
+			newWork.op = move
+			newWork.cur = *realEmployee
+		}
+
+		workToDo = append(workToDo, newWork)
+	}
+
+	//check the ones to delete (move to archive folder)
+	expectedHierarchyMap := employeeListToMap(expectedHierarchy)
+	for _, curRealEmployee := range curHierarchy {
+
+		_, found := expectedHierarchyMap[curRealEmployee.Pseudo]
+		if !found {
+			newWork := Work{
+				cur: curRealEmployee,
+				op:  archive,
+			}
+			workToDo = append(workToDo, newWork)
+		}
+	}
+
+	doWork(workToDo, curHierarchy, employeeRosterSheetID)
 }
 
 // distribute will add one copy of the provided document in each folder of the hierarchy
@@ -99,9 +140,10 @@ func main() {
 			crawl(params[0], false, true)
 		}
 
-	case "populate":
-
-	case "update":
+	case "updatehierarchy":
+		if validateParamsNumber(2, params, false) {
+			updateHierarchy(params[0], params[1])
+		}
 
 	case "updateaccessrights":
 		if validateParamsNumber(1, params, false) {

@@ -4,8 +4,6 @@ import (
 	"google.golang.org/api/drive/v3"
 )
 
-//func crawlForMistakes
-
 func crawlHierarchy(folderID string) ([]Employee, error) {
 	srv, err := createDriveService()
 	check(err)
@@ -133,4 +131,15 @@ func distributeDocumentRecursive(driveSrv *drive.Service, folderID string, sourc
 	}
 
 	return err
+}
+
+func moveFile(documentID string, curParentID string, targetFolderID string) error {
+
+	srv, err := createDriveService()
+	check(err)
+
+	_, err = srv.Files.Update(documentID, nil).AddParents(targetFolderID).RemoveParents(curParentID).Do()
+	check(err)
+
+	return nil
 }
