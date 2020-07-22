@@ -11,9 +11,6 @@ const (
 	archive Operation = 0 //move the file to archive folder (create archive folder if none present)
 	create  Operation = 1 //create the file and then list
 	move    Operation = 2 //move the file to new parent folder
-	noop    Operation = 3 //simply list the parent folder
-
-	archiveFolderName string = "archive"
 )
 
 //Work is to define one change that needs to be performed in the hierarchy
@@ -29,8 +26,6 @@ func (w Work) ToString() string {
 	var rString string
 
 	switch w.op {
-	case noop:
-		rString = fmt.Sprintf("{Operation: NOOP(Already Good!) for employee %s}", w.cur.Pseudo)
 	case create:
 		rString = fmt.Sprintf("{Operation: CREATE for employee %s UNDER %s}", w.target.Pseudo, w.target.ManagerPseudo)
 	case move:
@@ -42,6 +37,11 @@ func (w Work) ToString() string {
 }
 
 func sortWorkOrders(workOrders *[]Work, curHierarchy []Employee) error {
+
+	//if there is nothing to sort, let's not try to
+	if workOrders == nil || len(*workOrders) < 2 {
+		return nil
+	}
 
 	//init our work datastruct
 	allPotentialEmployees := make(map[string]bool)
@@ -94,7 +94,7 @@ func sortWorkOrders(workOrders *[]Work, curHierarchy []Employee) error {
 	return nil
 }
 
-func doWork(workOrders []Work, curHierarchy []Employee, employeeRosterSheetID string) error {
+func doWork(workOrders []Work, curHierarchy []Employee) error {
 
 	err := sortWorkOrders(&workOrders, curHierarchy)
 	check(err)
@@ -110,13 +110,16 @@ func doWork(workOrders []Work, curHierarchy []Employee, employeeRosterSheetID st
 
 		switch curWorkOrder.op {
 		case archive:
-
+			//archiving is basically moving the folder to the archive folder.
+			moveFile(curWorkOrder.cur.FolderID, fileIDMap[curWorkOrder.cur.ManagerPseudo], fileIDMap[ArchiveFolderName])
 		case create:
-
+			newFolderID, err := createFolder(fileIDMap[curWorkOrder.target.ManagerPseudo], curWorkOrder.target.Pseudo)
+			if err == nil {
+				fileIDMap[curWorkOrder.target.Pseudo] = newFolderID
+				curWorkOrder.target.FolderID = newFolderID
+			}
 		case move:
 			moveFile(curWorkOrder.cur.FolderID, fileIDMap[curWorkOrder.cur.ManagerPseudo], fileIDMap[curWorkOrder.target.ManagerPseudo])
-		case noop:
-
 		}
 
 	}

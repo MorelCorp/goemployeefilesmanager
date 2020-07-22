@@ -9,7 +9,13 @@ import (
 const (
 	//DomainName is the email domain name used access rights attribution
 	DomainName = "coveo.com"
+
+	//ArchiveFolderName is the string name of the folder where archived(deleted) files will be put
+	ArchiveFolderName = "_archive"
 )
+
+//TrialRunOnly is a global flag preventing any change to files in Drive if enabled. Only log output will be generated.
+var TrialRunOnly bool = false
 
 // help displays the different options to the user
 func help() {
@@ -38,13 +44,13 @@ func crawl(rootFolderID string, jsonOutput bool, sheetOutput bool) error {
 		check(err)
 	}
 
-	if sheetOutput {
+	if sheetOutput && !TrialRunOnly {
 		newSheetID, err := employeeListToSheet("Employee Roster", employeeList)
 		debugLog("Sheet created: %s", spreadsheetLinkFormat(newSheetID))
 		check(err)
 	}
 
-	if !sheetOutput && !jsonOutput {
+	if (!sheetOutput && !jsonOutput) || TrialRunOnly {
 		fmt.Println(employeeList)
 	}
 
@@ -53,6 +59,8 @@ func crawl(rootFolderID string, jsonOutput bool, sheetOutput bool) error {
 
 //updateHierarchy will use the spreadsheet id in param and parse the folder hierarchy to define and apply what needs to be updated
 func updateHierarchy(rootFolderID string, employeeRosterSheetID string) {
+
+	var found bool
 
 	//read roster tree
 	expectedHierarchy := importHierarchy(employeeRosterSheetID)
@@ -63,6 +71,25 @@ func updateHierarchy(rootFolderID string, employeeRosterSheetID string) {
 
 	curHierarchyMap := employeeListToMap(curHierarchy)
 
+	//let's make sure we have the archive folder (if needed)
+	_, found = curHierarchyMap[ArchiveFolderName]
+	if !found {
+
+		newArchiveFolderID, err := createFolder(rootFolderID, ArchiveFolderName)
+		check(err)
+
+		fakeEmployee := Employee{
+			Pseudo:   ArchiveFolderName,
+			FolderID: newArchiveFolderID,
+		}
+
+		oneElementSlice := []Employee{fakeEmployee}
+		curHierarchy = append(oneElementSlice, curHierarchy...)
+	}
+
+	//and in the same way, we'll have to pass along the root folder
+	curHierarchy = append(curHierarchy, Employee{Pseudo: "", FolderID: rootFolderID})
+
 	//let's list all the work to do
 	var workToDo []Work
 
@@ -72,26 +99,29 @@ func updateHierarchy(rootFolderID string, employeeRosterSheetID string) {
 			target: curExpectedEmployee,
 		}
 
-		realEmployee, ok := curHierarchyMap[curExpectedEmployee.Pseudo]
+		realEmployee, found := curHierarchyMap[curExpectedEmployee.Pseudo]
 
-		if ok != true {
+		if found != true {
 			newWork.op = create
-		} else if realEmployee.ManagerPseudo == curExpectedEmployee.ManagerPseudo {
-			newWork.op = noop
-			newWork.cur = *realEmployee
-		} else {
+			workToDo = append(workToDo, newWork)
+		} else if realEmployee.ManagerPseudo != curExpectedEmployee.ManagerPseudo {
 			newWork.op = move
 			newWork.cur = *realEmployee
+			workToDo = append(workToDo, newWork)
 		}
-
-		workToDo = append(workToDo, newWork)
 	}
 
 	//check the ones to delete (move to archive folder)
 	expectedHierarchyMap := employeeListToMap(expectedHierarchy)
 	for _, curRealEmployee := range curHierarchy {
 
-		_, found := expectedHierarchyMap[curRealEmployee.Pseudo]
+		//sad not very nice hack...
+		if curRealEmployee.Pseudo == ArchiveFolderName || curRealEmployee.Pseudo == "" {
+			//we never want to remove the Archive or root folder
+			continue
+		}
+
+		_, found = expectedHierarchyMap[curRealEmployee.Pseudo]
 		if !found {
 			newWork := Work{
 				cur: curRealEmployee,
@@ -101,7 +131,9 @@ func updateHierarchy(rootFolderID string, employeeRosterSheetID string) {
 		}
 	}
 
-	doWork(workToDo, curHierarchy, employeeRosterSheetID)
+	doWork(workToDo, curHierarchy)
+
+	//to improve: update the roster file (even though it is possible to crawl for it from scratch...)
 }
 
 // distribute will add one copy of the provided document in each folder of the hierarchy
