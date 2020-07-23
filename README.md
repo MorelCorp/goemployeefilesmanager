@@ -23,3 +23,6 @@ go get -u golang.org/x/oauth2/google
 Config.json details
 
 credentials.json needs to be in the folder then you need to build the go module and run it in the CLI (it can't be run in VSCode for the initial OAuth handshake)
+
+You might want to modify the constants in main.go to fit your organisation
+DomainName = "[Your domain name eg. "google.com"]"

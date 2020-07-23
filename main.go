@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 )
@@ -12,14 +14,45 @@ const (
 
 	//ArchiveFolderName is the string name of the folder where archived(deleted) files will be put
 	ArchiveFolderName = "_archive"
+
+	helpFile = "help.txt"
 )
 
 //TrialRunOnly is a global flag preventing any change to files in Drive if enabled. Only log output will be generated.
 var TrialRunOnly bool = false
 
+func usage() {
+	fmt.Println("GoEmployeeFilesManager helper program")
+	fmt.Println("Possible commands: (help for full details)")
+	fmt.Println("- help:\t\t\tgo run goemployeefilesmanager help")
+	fmt.Println("- authenticate:\t\tgo run goemployeefilesmanager authenticate")
+	fmt.Println("- crawl:\t\tgo run goemployeefilesmanager crawl <ROOT_FOLDER_ID>")
+	fmt.Println("- updateHierarchy:\tgo run goemployeefilesmanager updateHierarchy <ROOT_FOLDER_ID> <TARGET_EMPLOYEE_ROSTER_FILD_ID>")
+	fmt.Println("- updateaccessrights:\tgo run goemployeefilesmanager updateHierarchy <ROOT_FOLDER_ID>")
+	fmt.Println("- distribute:\t\tgo run goemployeefilesmanager updateHierarchy <ROOT_FOLDER_ID> <SOURCE_FILE_ID> <FILE_COPIES_PREFIX>")
+}
+
 // help displays the different options to the user
 func help() {
+	file, err := os.Open(helpFile)
 
+	if err != nil {
+		log.Fatalf("failed opening file: %s", err)
+	}
+
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	var txtlines []string
+
+	for scanner.Scan() {
+		txtlines = append(txtlines, scanner.Text())
+	}
+
+	for _, eachline := range txtlines {
+		fmt.Println(eachline)
+	}
 }
 
 // authenticate handles initial auth saving credentials in token.json
@@ -190,8 +223,9 @@ func main() {
 		}
 
 	case "help":
-		fallthrough
-	default:
 		help()
+
+	default:
+		usage()
 	}
 }

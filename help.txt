@@ -1,0 +1,37 @@
+*************************************
+*   goemployeefilesmanager          *
+*       the user manual (help fle)  *
+*************************************
+
+* authenticate (1st step on any installation)
+You first need to get the file credentials.json from your google account becore calling this.
+Either you get the credentials.json from your organization or, if you are deploying the app yourself follow the procedure on google site "Getting started with authentication" https://cloud.google.com/docs/authentication/getting-started
+That part is a problem because you cannot run oAuth from a dev environment it seems... you need to run it command line.
+- go build 
+- go run goemployeefilesmanager authenticate
+You will be shown a link (https://accounts.google.com/o/oauth2/aauth?access_type....) click on the link and proceed with the steps provided.
+you will be given a key that you'll have to paste on the command line of the running application.
+Once you press enter, you'll be prompted by "Saving credential file to: token.json" signifying that you are now successfully authenticated.
+
+* crawl <FOLDER_ID>
+crawl will 
+
+	case "updatehierarchy":
+		if validateParamsNumber(2, params, false) {
+			updateHierarchy(params[0], params[1])
+		}
+
+	case "updateaccessrights":
+		if validateParamsNumber(1, params, false) {
+			updateAccessRights(params[0], false)
+		}
+
+	case "distribute":
+		if validateParamsNumber(3, params, true) {
+			distribute(params[0], params[1], params[2])
+		} else if validateParamsNumber(2, params, false) {
+			distribute(params[0], params[1], "")
+		}
+
+	case "help":
+		help()
