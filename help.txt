@@ -1,7 +1,27 @@
 *************************************
 *   goemployeefilesmanager          *
-*       the user manual (help fle)  *
+*       the user manual (help.txt)  *
 *************************************
+
+goemployeefilesmanager is a program to manage a shared google drive hierarchy to be used as employee files (for performance reviews and the likes).
+It is expected that each folder will have the employee pseudonym which will be the google drive username (USERNAME@DOMAIN.com).
+The folder hierarchy follows the company hierarchy. Under the root node, all top level managers will be present. Under each of those manager will be their subordinates and so on recursively.
+
+Note: FOLDER or FILE ID refers to the google drive file id present in the file address as shown in those examples
+https://drive.google.com/drive/u/0/folders/<FOLDER_ID>
+https://docs.google.com/spreadsheets/d/<FILE_ID>/edit#gid=0
+
+
+Below you'll find usage for the 6 methods of this software
+- help
+- authenticate
+- crawl
+- updateHierarchy
+- updateaccessrights
+- distribute
+
+* help
+Show this document
 
 * authenticate (1st step on any installation)
 You first need to get the file credentials.json from your google account becore calling this.
@@ -14,24 +34,20 @@ you will be given a key that you'll have to paste on the command line of the run
 Once you press enter, you'll be prompted by "Saving credential file to: token.json" signifying that you are now successfully authenticated.
 
 * crawl <FOLDER_ID>
-crawl will 
+crawl will go through the whole hierarchy under FOLDER_ID and will produce a spreadsheet (google sheet) listing every folders (empployees) with their managers and a link to their folders.
+The link to the spreadsheet will be provided as return of the execution.
 
-	case "updatehierarchy":
-		if validateParamsNumber(2, params, false) {
-			updateHierarchy(params[0], params[1])
-		}
+* updatehierarchy <FOLDER_ID> <EMPLOYEE_ROSTER_FILE_ID>
+following the information in EMPLOYEE_ROSTER_FILE_ID, updatehierarchy will create, move and archive subfolders as needed to reflect the provided hierarchy document.
+EMPLOYEE_ROSTER_FILE_ID: Spreadsheet with EMPLOYEE as first column and MANAGER as second column.
+- leave MANAGER empty for top level managers
+- both columns must only contain the username from the google account (USERNAME@DOMAIN.com)
 
-	case "updateaccessrights":
-		if validateParamsNumber(1, params, false) {
-			updateAccessRights(params[0], false)
-		}
+* updateaccessrights <FOLDER_ID>
+updateaccessrights will go through the whole hierarchy giving read/write access to the employee based on folder name. Folder name is expected to be the username in USERNAME@DOMAIN.com
+An employee(manager) will have access to all folders placed under them but will not have access to folders higher than them or in other branches.
+Note: updateaccessrights will not remove any provided rights and only give the access to the folder name holder (employee)
 
-	case "distribute":
-		if validateParamsNumber(3, params, true) {
-			distribute(params[0], params[1], params[2])
-		} else if validateParamsNumber(2, params, false) {
-			distribute(params[0], params[1], "")
-		}
-
-	case "help":
-		help()
+* distribute <FOLDER_ID> <SOURCE_FILE> <FILE_PREFIX>
+distribute will go through the complete hierarchy pointed by FOLDER_ID and drop a copy of the file pointed by SOURCE_FILE in each subfolders (recursively).
+The copy will be given the name <FILE_PREFIX>+<FOLDER_NAME/USERNAME>
