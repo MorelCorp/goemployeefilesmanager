@@ -15,9 +15,10 @@ func crawlHierarchy(folderID string) ([]Employee, error) {
 
 func crawlHierarchyRecursive(driveSrv *drive.Service, folderName string, folderID string, compoundList []Employee) ([]Employee, error) {
 
+	query := "'" + folderID + "' in parents and trashed=false and mimeType='application/vnd.google-apps.folder'"
 	r, err := driveSrv.Files.List().
 		Fields("files(id, name)").
-		Q("'" + folderID + "' in parents and trashed=false and mimeType = 'application/vnd.google-apps.folder'").
+		Q(query).
 		Do()
 
 	check(err)
