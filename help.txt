@@ -19,6 +19,7 @@ Below you'll find usage for the 6 methods of this software
 - updateHierarchy
 - updateaccessrights
 - distribute
+- insert
 
 * help
 Show this document
@@ -51,3 +52,8 @@ Note: updateaccessrights will not remove any provided rights and only give the a
 * distribute <FOLDER_ID> <SOURCE_FILE> <FILE_PREFIX>
 distribute will go through the complete hierarchy pointed by FOLDER_ID and drop a copy of the file pointed by SOURCE_FILE in each subfolders (recursively).
 The copy will be given the name <FILE_PREFIX>+<FOLDER_NAME/USERNAME>
+
+* insert <ROOT_FOLDER_ID> <MANAGER_FOLDER_NAME> <EMPLOYEE_FOLDER_NAME> <SOURCE_FILE> <TITLE_PREFIX>
+insert will search for the <MANAGER_FOLDER_NAME> within the hierarchy of <ROOT_FOLDER_ID>. If found it will create a new folder there named <EMPLOYEE_FOLDER_NAME>. 
+If <SOURCE_FILE> and <TITLE_PREFIX> are present (non ""), a copy of the document will be put in the new folder. The name will be of <TITLE_PREFIX>+<EMPLOYEE_FOLDER_NAME>
+A new sheet will be created with the new employee included.

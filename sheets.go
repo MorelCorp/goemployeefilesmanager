@@ -1,10 +1,15 @@
 package main
 
 import (
+	"sort"
+
 	"google.golang.org/api/sheets/v4"
 )
 
 func employeeListToSheet(sheetTitle string, employeeList []Employee) (string, error) {
+
+	//let's order the employeeList first
+	sort.Sort(ByEmployee(employeeList))
 
 	valueRange := employeeListToValueRange(employeeList)
 

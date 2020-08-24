@@ -4,6 +4,36 @@ import (
 	"google.golang.org/api/drive/v3"
 )
 
+// insertFolder will create a new folder under the manager folder name and return the new folder ID as well
+// as the updated full array of employees
+func insertFolder(rootFolderID string, managerFolderName string, newFolderName string) (string, []Employee) {
+
+	employees, err := crawlHierarchy(rootFolderID)
+	check(err)
+
+	var manager *Employee = nil
+
+	for _, employee := range employees {
+
+		if employee.Pseudo == managerFolderName {
+			manager = &employee
+			break
+		}
+	}
+
+	if manager == nil {
+		return "", nil
+	}
+
+	newFolderID, err := createFolder(manager.FolderID, newFolderName)
+	check(err)
+
+	newEmployee := Employee{Pseudo: newFolderName, ManagerPseudo: manager.Pseudo, FolderID: newFolderID}
+	employees = append(employees, newEmployee)
+
+	return newFolderID, employees
+}
+
 func crawlHierarchy(folderID string) ([]Employee, error) {
 	srv, err := createDriveService()
 	check(err)

@@ -30,6 +30,7 @@ func usage() {
 	fmt.Println("- updateHierarchy:\tgo run goemployeefilesmanager updateHierarchy <ROOT_FOLDER_ID> <TARGET_EMPLOYEE_ROSTER_FILD_ID>")
 	fmt.Println("- updateaccessrights:\tgo run goemployeefilesmanager updateHierarchy <ROOT_FOLDER_ID>")
 	fmt.Println("- distribute:\t\tgo run goemployeefilesmanager updateHierarchy <ROOT_FOLDER_ID> <SOURCE_FILE_ID> <FILE_COPIES_PREFIX>")
+	fmt.Println("- insert:\t\tgo run goemployeefilesmanager insert <ROOT_FOLDER_ID> <MANAGER_FOLDER_NAME> <EMPLOYEE_FOLDER_NAME> <SOURCE_FILE_ID(optional)> <TITLE_PREFIX (optional)>")
 }
 
 // help displays the different options to the user
@@ -174,6 +175,28 @@ func distribute(rootFolderID string, sourceDocumentID string, prefix string) err
 	return distributeDocument(rootFolderID, sourceDocumentID, prefix)
 }
 
+// distribute will add one copy of the provided document in each folder of the hierarchy
+func insert(rootFolderID string, managerFolderName string, newFolderName string, sourceDocumentID string, titlePrefix string) {
+
+	newFolderID, employees := insertFolder(rootFolderID, managerFolderName, newFolderName)
+
+	if sourceDocumentID != "" {
+		srv, err := createDriveService()
+		check(err)
+
+		var newTitle = titlePrefix
+		if newTitle != "" {
+			newTitle = newTitle + newFolderName
+		}
+		err = copyDocument(srv, newFolderID, sourceDocumentID, newTitle)
+		check(err)
+	}
+
+	newSheetID, err := employeeListToSheet("New Employees Roster", employees)
+	debugLog("Sheet created: %s", spreadsheetLinkFormat(newSheetID))
+	check(err)
+}
+
 func validateParamsNumber(requiredParamsNumber int, params []string, silent bool) bool {
 	if len(params) >= requiredParamsNumber {
 		return true
@@ -220,6 +243,13 @@ func main() {
 			distribute(params[0], params[1], params[2])
 		} else if validateParamsNumber(2, params, false) {
 			distribute(params[0], params[1], "")
+		}
+
+	case "insert":
+		if validateParamsNumber(5, params, false) {
+			insert(params[0], params[1], params[2], params[3], params[4])
+		} else if validateParamsNumber(3, params, true) {
+			insert(params[0], params[1], params[2], "", "")
 		}
 
 	case "help":

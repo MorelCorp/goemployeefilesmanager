@@ -24,13 +24,6 @@ func (a ByEmployee) Len() int           { return len(a) }
 func (a ByEmployee) Less(i, j int) bool { return a[i].Pseudo < a[j].Pseudo }
 func (a ByEmployee) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
-// ByManager implements sort.Interface based on the Pseudo(Manager) field.
-type ByManager []Employee
-
-func (a ByManager) Len() int           { return len(a) }
-func (a ByManager) Less(i, j int) bool { return a[i].ManagerPseudo < a[j].ManagerPseudo }
-func (a ByManager) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-
 func employeeListToMap(employeeList []Employee) map[string]*Employee {
 
 	employeeMap := make(map[string]*Employee)
