@@ -2,40 +2,55 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 )
 
-const (
-	//DomainName is the email domain name used access rights attribution
-	DomainName = "coveo.com"
+type appConfiguration struct {
+	Globals struct {
+		RootFolderID      string `json:"root_folder_id"`
+		ArchiveFolderName string `json:"archive_folder_name"`
+		DomainName        string `json:"domain_name"`
+		HelpFile          string `json:"help_file"`
+	} `json:"globals"`
+	Operations struct {
+		SourceDocumentID string `json:"source_document_id"`
+		TitlePrefix      string `json:"title_prefix"`
+	} `json:"operations"`
+}
 
-	//ArchiveFolderName is the string name of the folder where archived(deleted) files will be put
-	ArchiveFolderName = "_archive"
+//AppConfigs contains all global configurations imported from Config.JSON
+var AppConfigs appConfiguration
 
-	helpFile = "help.txt"
-)
+func loadConfigs() {
+	f, err := os.Open("./config.json")
+	check(err)
 
-//TrialRunOnly is a global flag preventing any change to files in Drive if enabled. Only log output will be generated.
-var TrialRunOnly bool = false
+	defer f.Close()
+
+	err = json.NewDecoder(f).Decode(&AppConfigs)
+	check(err)
+
+}
 
 func usage() {
 	fmt.Println("GoEmployeeFilesManager helper program")
 	fmt.Println("Possible commands: (help for full details)")
 	fmt.Println("- help:\t\t\tgo run goemployeefilesmanager help")
 	fmt.Println("- authenticate:\t\tgo run goemployeefilesmanager authenticate")
-	fmt.Println("- crawl:\t\tgo run goemployeefilesmanager crawl <ROOT_FOLDER_ID>")
-	fmt.Println("- updateHierarchy:\tgo run goemployeefilesmanager updateHierarchy <ROOT_FOLDER_ID> <TARGET_EMPLOYEE_ROSTER_FILD_ID>")
-	fmt.Println("- updateaccessrights:\tgo run goemployeefilesmanager updateHierarchy <ROOT_FOLDER_ID>")
-	fmt.Println("- distribute:\t\tgo run goemployeefilesmanager updateHierarchy <ROOT_FOLDER_ID> <SOURCE_FILE_ID> <FILE_COPIES_PREFIX>")
-	fmt.Println("- insert:\t\tgo run goemployeefilesmanager insert <ROOT_FOLDER_ID> <MANAGER_FOLDER_NAME> <EMPLOYEE_FOLDER_NAME> <SOURCE_FILE_ID(optional)> <TITLE_PREFIX (optional)>")
+	fmt.Println("- crawl:\t\tgo run goemployeefilesmanager crawl")
+	fmt.Println("- updatehierarchy:\tgo run goemployeefilesmanager updatehierarchy <TARGET_EMPLOYEE_ROSTER_FILD_ID>")
+	fmt.Println("- updateaccessrights:\tgo run goemployeefilesmanager updateaccessrights")
+	fmt.Println("- distribute:\t\tgo run goemployeefilesmanager distribute")
+	fmt.Println("- insert:\t\tgo run goemployeefilesmanager insert <MANAGER_FOLDER_NAME> <EMPLOYEE_FOLDER_NAME>>")
 }
 
 // help displays the different options to the user
 func help() {
-	file, err := os.Open(helpFile)
+	file, err := os.Open(AppConfigs.Globals.HelpFile)
 
 	if err != nil {
 		log.Fatalf("failed opening file: %s", err)
@@ -68,9 +83,9 @@ func authenticate() error {
 }
 
 // crawl will go through the whole hierarchy and provide folders and links either as a json outputfile, a sheet or if nothing specified as consoole output
-func crawl(rootFolderID string, jsonOutput bool, sheetOutput bool) error {
+func crawl(jsonOutput bool, sheetOutput bool) error {
 
-	employeeList, err := crawlHierarchy(rootFolderID)
+	employeeList, err := crawlHierarchy(AppConfigs.Globals.RootFolderID)
 	check(err)
 
 	if jsonOutput {
@@ -78,21 +93,26 @@ func crawl(rootFolderID string, jsonOutput bool, sheetOutput bool) error {
 		check(err)
 	}
 
-	if sheetOutput && !TrialRunOnly {
+	if sheetOutput {
 		newSheetID, err := employeeListToSheet("Employee Roster", employeeList)
 		debugLog("Sheet created: %s", spreadsheetLinkFormat(newSheetID))
 		check(err)
 	}
 
-	if (!sheetOutput && !jsonOutput) || TrialRunOnly {
+	if !sheetOutput && !jsonOutput {
 		fmt.Println(employeeList)
 	}
 
 	return nil
 }
 
+// distribute will add one copy of the provided document in each folder of the hierarchy
+func distribute() error {
+	return distributeDocument(AppConfigs.Globals.RootFolderID, AppConfigs.Operations.SourceDocumentID, AppConfigs.Operations.TitlePrefix)
+}
+
 //updateHierarchy will use the spreadsheet id in param and parse the folder hierarchy to define and apply what needs to be updated
-func updateHierarchy(rootFolderID string, employeeRosterSheetID string) {
+func updateHierarchy(employeeRosterSheetID string) {
 
 	var found bool
 
@@ -100,20 +120,20 @@ func updateHierarchy(rootFolderID string, employeeRosterSheetID string) {
 	expectedHierarchy := importHierarchy(employeeRosterSheetID)
 
 	//parse folder hierarchy and note problems
-	curHierarchy, err := crawlHierarchy(rootFolderID)
+	curHierarchy, err := crawlHierarchy(AppConfigs.Globals.RootFolderID)
 	check(err)
 
 	curHierarchyMap := employeeListToMap(curHierarchy)
 
 	//let's make sure we have the archive folder (if needed)
-	_, found = curHierarchyMap[ArchiveFolderName]
+	_, found = curHierarchyMap[AppConfigs.Globals.ArchiveFolderName]
 	if !found {
 
-		newArchiveFolderID, err := createFolder(rootFolderID, ArchiveFolderName)
+		newArchiveFolderID, err := createFolder(AppConfigs.Globals.RootFolderID, AppConfigs.Globals.ArchiveFolderName)
 		check(err)
 
 		fakeEmployee := Employee{
-			Pseudo:   ArchiveFolderName,
+			Pseudo:   AppConfigs.Globals.ArchiveFolderName,
 			FolderID: newArchiveFolderID,
 		}
 
@@ -122,7 +142,7 @@ func updateHierarchy(rootFolderID string, employeeRosterSheetID string) {
 	}
 
 	//and in the same way, we'll have to pass along the root folder
-	curHierarchy = append(curHierarchy, Employee{Pseudo: "", FolderID: rootFolderID})
+	curHierarchy = append(curHierarchy, Employee{Pseudo: "", FolderID: AppConfigs.Globals.RootFolderID})
 
 	//let's list all the work to do
 	var workToDo []Work
@@ -150,7 +170,7 @@ func updateHierarchy(rootFolderID string, employeeRosterSheetID string) {
 	for _, curRealEmployee := range curHierarchy {
 
 		//sad not very nice hack...
-		if curRealEmployee.Pseudo == ArchiveFolderName || curRealEmployee.Pseudo == "" {
+		if curRealEmployee.Pseudo == AppConfigs.Globals.ArchiveFolderName || curRealEmployee.Pseudo == "" {
 			//we never want to remove the Archive or root folder
 			continue
 		}
@@ -170,27 +190,19 @@ func updateHierarchy(rootFolderID string, employeeRosterSheetID string) {
 	//to improve: update the roster file (even though it is possible to crawl for it from scratch...)
 }
 
-// distribute will add one copy of the provided document in each folder of the hierarchy
-func distribute(rootFolderID string, sourceDocumentID string, prefix string) error {
-	return distributeDocument(rootFolderID, sourceDocumentID, prefix)
-}
+// insert will add one copy of the provided document in each folder of the hierarchy
+func insert(managerFolderName string, newFolderName string) {
 
-// distribute will add one copy of the provided document in each folder of the hierarchy
-func insert(rootFolderID string, managerFolderName string, newFolderName string, sourceDocumentID string, titlePrefix string) {
+	newFolderID, employees := insertFolder(AppConfigs.Globals.RootFolderID, managerFolderName, newFolderName)
 
-	newFolderID, employees := insertFolder(rootFolderID, managerFolderName, newFolderName)
-
-	if sourceDocumentID != "" {
-		srv, err := createDriveService()
-		check(err)
-
-		var newTitle = titlePrefix
-		if newTitle != "" {
-			newTitle = newTitle + newFolderName
-		}
-		err = copyDocument(srv, newFolderID, sourceDocumentID, newTitle)
-		check(err)
+	srv, err := createDriveService()
+	check(err)
+	var newTitle = AppConfigs.Operations.TitlePrefix
+	if newTitle != "" {
+		newTitle = newTitle + newFolderName
 	}
+	err = copyDocument(srv, newFolderID, AppConfigs.Operations.SourceDocumentID, newTitle)
+	check(err)
 
 	newSheetID, err := employeeListToSheet("New Employees Roster", employees)
 	debugLog("Sheet created: %s", spreadsheetLinkFormat(newSheetID))
@@ -210,6 +222,8 @@ func validateParamsNumber(requiredParamsNumber int, params []string, silent bool
 
 func main() {
 
+	loadConfigs()
+
 	var functionCall = ""
 	var params = []string{}
 
@@ -224,32 +238,22 @@ func main() {
 		authenticate()
 
 	case "crawl":
-		if validateParamsNumber(1, params, false) {
-			crawl(params[0], false, true)
-		}
+		crawl(false, true)
 
 	case "updatehierarchy":
-		if validateParamsNumber(2, params, false) {
-			updateHierarchy(params[0], params[1])
+		if validateParamsNumber(1, params, false) {
+			updateHierarchy(params[0])
 		}
 
 	case "updateaccessrights":
-		if validateParamsNumber(1, params, false) {
-			updateAccessRights(params[0], false)
-		}
+		updateAccessRights(AppConfigs.Globals.RootFolderID, false)
 
 	case "distribute":
-		if validateParamsNumber(3, params, true) {
-			distribute(params[0], params[1], params[2])
-		} else if validateParamsNumber(2, params, false) {
-			distribute(params[0], params[1], "")
-		}
+		distribute()
 
 	case "insert":
-		if validateParamsNumber(5, params, false) {
-			insert(params[0], params[1], params[2], params[3], params[4])
-		} else if validateParamsNumber(3, params, true) {
-			insert(params[0], params[1], params[2], "", "")
+		if validateParamsNumber(2, params, false) {
+			insert(params[0], params[1])
 		}
 
 	case "help":

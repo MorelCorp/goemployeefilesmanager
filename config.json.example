@@ -1,0 +1,12 @@
+{
+  "globals": {
+    "root_folder_id": "ID OF THE ROOT GOOGLE DRIVE FOLDER",
+    "archive_folder_name": "_archive",
+    "domain_name": "company.com",
+    "help_file": "./help.txt"
+  },
+  "operations": {
+    "source_document_id": "ID OF THE GOOGLE DOCUMENT TO BE COPIED IN EACH FOLDERS",
+    "title_prefix": "Q3.2020 - "
+  }
+}

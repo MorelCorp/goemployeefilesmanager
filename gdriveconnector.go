@@ -72,11 +72,6 @@ func crawlHierarchyRecursive(driveSrv *drive.Service, folderName string, folderI
 
 func allowAccess(driveSrv *drive.Service, itemID string, emailAdress string, notifyUser bool) error {
 
-	if TrialRunOnly {
-		debugLog("Trial Run: Giving %s access to %s.", emailAdress, itemID)
-		return nil
-	}
-
 	newPermission := &drive.Permission{
 		EmailAddress: emailAdress,
 		Type:         "user",
@@ -99,13 +94,13 @@ func updateAccessRightsRecursive(driveSrv *drive.Service, folderID string, notif
 	for _, curFile := range r.Files {
 
 		//we never want to update access rights to the archive folder
-		if curFile.Name == ArchiveFolderName {
+		if curFile.Name == AppConfigs.Globals.ArchiveFolderName {
 			continue
 		}
 
 		debugLog("FOUND: %s (%s)\n", curFile.Name, curFile.Id)
 
-		err = allowAccess(driveSrv, curFile.Id, curFile.Name+"@"+DomainName, notifyUsers)
+		err = allowAccess(driveSrv, curFile.Id, curFile.Name+"@"+AppConfigs.Globals.DomainName, notifyUsers)
 		check(err)
 
 		err = updateAccessRightsRecursive(driveSrv, curFile.Id, notifyUsers)
@@ -124,11 +119,6 @@ func updateAccessRights(rootFolderID string, notifyUsers bool) error {
 }
 
 func copyDocument(driveSrv *drive.Service, targetFolderID string, sourceDocumentID string, newTitle string) error {
-
-	if TrialRunOnly {
-		debugLog("Trial Run: Copying %s (Potential New title:%s) in %s.", sourceDocumentID, newTitle, targetFolderID)
-		return nil
-	}
 
 	// if new title = "" we just skip new title
 	f := &drive.File{}
@@ -181,11 +171,6 @@ func distributeDocumentRecursive(driveSrv *drive.Service, folderID string, sourc
 
 func moveFile(documentID string, curParentID string, targetFolderID string) error {
 
-	if TrialRunOnly {
-		debugLog("Trial Run: Move required for %s from %s to %s.", documentID, curParentID, targetFolderID)
-		return nil
-	}
-
 	srv, err := createDriveService()
 	check(err)
 
@@ -196,11 +181,6 @@ func moveFile(documentID string, curParentID string, targetFolderID string) erro
 }
 
 func createFolder(parentFolderID string, folderName string) (string, error) {
-
-	if TrialRunOnly {
-		debugLog("Trial Run: Create folder \"%s\" required in folder %s.", folderName, parentFolderID)
-		return "", nil
-	}
 
 	srv, err := createDriveService()
 	check(err)

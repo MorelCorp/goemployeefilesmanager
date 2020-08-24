@@ -111,7 +111,7 @@ func doWork(workOrders []Work, curHierarchy []Employee) error {
 		switch curWorkOrder.op {
 		case archive:
 			//archiving is basically moving the folder to the archive folder.
-			moveFile(curWorkOrder.cur.FolderID, fileIDMap[curWorkOrder.cur.ManagerPseudo], fileIDMap[ArchiveFolderName])
+			moveFile(curWorkOrder.cur.FolderID, fileIDMap[curWorkOrder.cur.ManagerPseudo], fileIDMap[AppConfigs.Globals.ArchiveFolderName])
 		case create:
 			newFolderID, err := createFolder(fileIDMap[curWorkOrder.target.ManagerPseudo], curWorkOrder.target.Pseudo)
 			if err == nil {

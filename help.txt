@@ -34,11 +34,11 @@ You will be shown a link (https://accounts.google.com/o/oauth2/aauth?access_type
 you will be given a key that you'll have to paste on the command line of the running application.
 Once you press enter, you'll be prompted by "Saving credential file to: token.json" signifying that you are now successfully authenticated.
 
-* crawl <FOLDER_ID>
-crawl will go through the whole hierarchy under FOLDER_ID and will produce a spreadsheet (google sheet) listing every folders (empployees) with their managers and a link to their folders.
+* crawl
+crawl will go through the whole hierarchy under globals.root_folder_id and will produce a spreadsheet (google sheet) listing every folders (empployees) with their managers and a link to their folders.
 The link to the spreadsheet will be provided as return of the execution.
 
-* updatehierarchy <FOLDER_ID> <EMPLOYEE_ROSTER_FILE_ID>
+* updatehierarchy <EMPLOYEE_ROSTER_FILE_ID>
 following the information in EMPLOYEE_ROSTER_FILE_ID, updatehierarchy will create, move and archive subfolders as needed to reflect the provided hierarchy document.
 EMPLOYEE_ROSTER_FILE_ID: Spreadsheet with EMPLOYEE as first column and MANAGER as second column.
 - leave MANAGER empty for top level managers
@@ -49,11 +49,11 @@ updateaccessrights will go through the whole hierarchy giving read/write access 
 An employee(manager) will have access to all folders placed under them but will not have access to folders higher than them or in other branches.
 Note: updateaccessrights will not remove any provided rights and only give the access to the folder name holder (employee)
 
-* distribute <FOLDER_ID> <SOURCE_FILE> <FILE_PREFIX>
-distribute will go through the complete hierarchy pointed by FOLDER_ID and drop a copy of the file pointed by SOURCE_FILE in each subfolders (recursively).
-The copy will be given the name <FILE_PREFIX>+<FOLDER_NAME/USERNAME>
+* distribute 
+distribute will go through the complete hierarchy pointed by globals.root_folder_id and drop a copy of the file pointed by operations.source_document_id in each subfolders (recursively).
+The copy will be given the name operations.title_prefix + <FOLDER_NAME/USERNAME>
 
-* insert <ROOT_FOLDER_ID> <MANAGER_FOLDER_NAME> <EMPLOYEE_FOLDER_NAME> <SOURCE_FILE> <TITLE_PREFIX>
-insert will search for the <MANAGER_FOLDER_NAME> within the hierarchy of <ROOT_FOLDER_ID>. If found it will create a new folder there named <EMPLOYEE_FOLDER_NAME>. 
-If <SOURCE_FILE> and <TITLE_PREFIX> are present (non ""), a copy of the document will be put in the new folder. The name will be of <TITLE_PREFIX>+<EMPLOYEE_FOLDER_NAME>
+* insert <MANAGER_FOLDER_NAME> <EMPLOYEE_FOLDER_NAME>
+insert will search for the <MANAGER_FOLDER_NAME> within the hierarchy of globals.root_folder_id. If found it will create a new folder there named <EMPLOYEE_FOLDER_NAME>. 
+A copy of the document operations.source_document_id will be put in the new folder. The name will be of operations.title_prefix + <EMPLOYEE_FOLDER_NAME>
 A new sheet will be created with the new employee included.
